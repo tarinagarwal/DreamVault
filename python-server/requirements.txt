@@ -1,0 +1,8 @@
+langchain
+pillow
+python-dotenv
+stability-sdk
+langchain-groq
+groq
+flask
+requests

@@ -1,0 +1,575 @@
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* THEME SYSTEM - Modify these values to change the entire app theme */
+
+/* DARK THEME SYSTEM - Forest Green & Amber Aesthetic */
+
+@layer base {
+  /* Global Base Styles - Dark Theme */
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    /* Changed to dark background with light text */
+    @apply bg-neutral-900 font-primary antialiased text-neutral-200;
+  }
+
+  /* Custom Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-800;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-600;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-700;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: theme("colors.brand.600") theme("colors.neutral.800");
+  }
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Typography Base Styles - Dark Theme */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  /* Changed to light text for dark theme */
+  @apply font-semibold text-neutral-100;
+}
+
+h1 {
+  @apply text-4xl lg:text-5xl;
+}
+h2 {
+  @apply text-3xl lg:text-4xl;
+}
+h3 {
+  @apply text-2xl lg:text-3xl;
+}
+h4 {
+  @apply text-xl lg:text-2xl;
+}
+h5 {
+  @apply text-lg lg:text-xl;
+}
+h6 {
+  @apply text-base lg:text-lg;
+}
+
+/* Link Base Styles */
+a {
+  @apply transition-colors duration-200;
+}
+
+/* Focus Styles - Dark Theme */
+*:focus {
+  @apply outline-none;
+}
+
+*:focus-visible {
+  /* Updated focus ring for dark theme */
+  @apply ring-2 ring-brand-500 ring-offset-2 ring-offset-neutral-900;
+}
+
+@layer components {
+  /* SEMANTIC COMPONENT CLASSES - Dark Theme */
+
+  /* Layout Components */
+  .theme-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .theme-section {
+    @apply py-16 lg:py-24;
+  }
+
+  .theme-page {
+    /* Dark page background */
+    @apply min-h-screen bg-neutral-900;
+  }
+
+  .theme-page-auth {
+    /* Dark gradient background for auth pages */
+    @apply min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-900 via-neutral-800 to-brand-950 py-12 px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Card Components - Dark Theme */
+  .theme-card {
+    /* Dark card with subtle border */
+    @apply bg-neutral-800 rounded-2xl shadow-soft border border-neutral-700 overflow-hidden;
+  }
+
+  .theme-card-header {
+    /* Dark card header */
+    @apply px-6 py-4 border-b border-neutral-700 bg-neutral-800/50;
+  }
+
+  .theme-card-body {
+    @apply px-6 py-6;
+  }
+
+  .theme-card-footer {
+    /* Dark card footer */
+    @apply px-6 py-4 border-t border-neutral-700 bg-neutral-800/50;
+  }
+
+  .theme-card-hover {
+    /* Dark hover effects */
+    @apply theme-card hover:shadow-medium hover:border-neutral-600 hover:bg-neutral-750 transition-all duration-300 cursor-pointer;
+  }
+
+  /* Button Components - Dark Theme */
+  .theme-btn {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all duration-200 
+           focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 
+           disabled:opacity-50 disabled:cursor-not-allowed
+           disabled:transform-none select-none;
+  }
+
+  .theme-btn-primary {
+    /* Forest green primary button */
+    @apply theme-btn bg-gradient-to-r from-brand-600 to-brand-700 text-white 
+           hover:from-brand-500 hover:to-brand-600 focus:ring-brand-500 
+           shadow-soft hover:shadow-medium transform hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .theme-btn-secondary {
+    /* Dark secondary button */
+    @apply theme-btn bg-neutral-800 text-neutral-200 border border-neutral-600 
+           hover:bg-neutral-700 hover:border-neutral-500 focus:ring-brand-500 
+           shadow-soft hover:shadow-medium;
+  }
+
+  .theme-btn-danger {
+    @apply theme-btn bg-gradient-to-r from-danger-600 to-danger-700 text-white 
+           hover:from-danger-500 hover:to-danger-600 focus:ring-danger-500 
+           shadow-soft hover:shadow-medium transform hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .theme-btn-success {
+    @apply theme-btn bg-gradient-to-r from-success-600 to-success-700 text-white 
+           hover:from-success-500 hover:to-success-600 focus:ring-success-500 
+           shadow-soft hover:shadow-medium transform hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .theme-btn-ghost {
+    /* Dark ghost button */
+    @apply theme-btn text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 
+           focus:ring-brand-500;
+  }
+
+  .theme-btn-link {
+    /* Dark link button */
+    @apply inline-flex items-center text-brand-400 hover:text-brand-300 font-medium 
+           transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 
+           focus:ring-offset-2 focus:ring-offset-neutral-900 rounded-md px-1;
+  }
+
+  /* Form Components - Dark Theme */
+  .theme-input {
+    /* Dark input fields */
+    @apply w-full px-4 py-3 border border-neutral-600 rounded-xl 
+           focus:ring-2 focus:ring-brand-500 focus:border-transparent 
+           transition-all duration-200 bg-neutral-800 placeholder-neutral-400
+           hover:border-neutral-500 text-neutral-100;
+  }
+
+  .theme-input:focus {
+    @apply shadow-soft;
+  }
+
+  .theme-input-error {
+    @apply theme-input border-danger-500 focus:ring-danger-500 focus:border-danger-500;
+  }
+
+  .theme-label {
+    /* Light labels for dark theme */
+    @apply block text-sm font-medium text-neutral-300 mb-2;
+  }
+
+  .theme-error {
+    @apply text-danger-400 text-sm mt-1 flex items-center;
+  }
+
+  .theme-success {
+    @apply text-success-400 text-sm mt-1 flex items-center;
+  }
+
+  .theme-help {
+    /* Muted help text for dark theme */
+    @apply text-neutral-400 text-sm mt-1;
+  }
+
+  /* Navigation Components - Dark Theme */
+  .theme-nav {
+    /* Dark navigation with backdrop blur */
+    @apply bg-neutral-900/80 backdrop-blur-md border-b border-neutral-700 sticky top-0 z-50;
+  }
+
+  .theme-nav-link {
+    /* Dark navigation links */
+    @apply flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium 
+           text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 hover:shadow-sm 
+           transition-all duration-200;
+  }
+
+  .theme-nav-link-active {
+    /* Active nav link with brand colors */
+    @apply theme-nav-link text-brand-400 bg-brand-950 hover:bg-brand-900;
+  }
+
+  /* Alert Components - Dark Theme */
+  .theme-alert {
+    @apply px-4 py-3 rounded-xl border-l-4 animate-slide-up;
+  }
+
+  .theme-alert-success {
+    /* Dark success alert */
+    @apply theme-alert bg-success-950 border-success-500 text-success-300;
+  }
+
+  .theme-alert-error {
+    /* Dark error alert */
+    @apply theme-alert bg-danger-950 border-danger-500 text-danger-300;
+  }
+
+  .theme-alert-warning {
+    /* Dark warning alert */
+    @apply theme-alert bg-warning-950 border-warning-500 text-warning-300;
+  }
+
+  .theme-alert-info {
+    /* Dark info alert */
+    @apply theme-alert bg-info-950 border-info-500 text-info-300;
+  }
+
+  /* Badge Components - Dark Theme */
+  .theme-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .theme-badge-primary {
+    /* Dark primary badge */
+    @apply theme-badge bg-brand-900 text-brand-300;
+  }
+
+  .theme-badge-success {
+    /* Dark success badge */
+    @apply theme-badge bg-success-900 text-success-300;
+  }
+
+  .theme-badge-danger {
+    /* Dark danger badge */
+    @apply theme-badge bg-danger-900 text-danger-300;
+  }
+
+  .theme-badge-warning {
+    /* Dark warning badge */
+    @apply theme-badge bg-warning-900 text-warning-300;
+  }
+
+  .theme-badge-neutral {
+    /* Dark neutral badge */
+    @apply theme-badge bg-neutral-800 text-neutral-300;
+  }
+
+  /* Loading Components */
+  .theme-spinner {
+    @apply inline-block border-2 border-current border-t-transparent rounded-full animate-spin;
+  }
+
+  .theme-spinner-sm {
+    @apply theme-spinner w-4 h-4;
+  }
+
+  .theme-spinner-md {
+    @apply theme-spinner w-6 h-6;
+  }
+
+  .theme-spinner-lg {
+    @apply theme-spinner w-8 h-8;
+  }
+
+  /* Text Utilities - Dark Theme */
+  .theme-text-gradient {
+    /* Updated gradient for dark theme */
+    @apply bg-gradient-to-r from-brand-400 to-warning-400 bg-clip-text text-transparent;
+  }
+
+  .theme-text-muted {
+    /* Muted text for dark theme */
+    @apply text-neutral-400;
+  }
+
+  .theme-text-primary {
+    /* Primary text for dark theme */
+    @apply text-neutral-100;
+  }
+
+  .theme-text-secondary {
+    /* Secondary text for dark theme */
+    @apply text-neutral-300;
+  }
+
+  /* Background Utilities - Dark Theme */
+  .theme-bg-gradient {
+    /* Updated brand gradient */
+    @apply bg-gradient-to-r from-brand-600 to-brand-700;
+  }
+
+  .theme-bg-gradient-soft {
+    /* Dark soft gradient */
+    @apply bg-gradient-to-br from-neutral-900 via-neutral-800 to-brand-950;
+  }
+
+  .theme-bg-glass {
+    /* Dark glass effect */
+    @apply bg-neutral-800/80 backdrop-blur-sm border border-neutral-700/50;
+  }
+
+  /* Icon Containers - Dark Theme */
+  .theme-icon-container {
+    @apply w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-200;
+  }
+
+  .theme-icon-container-primary {
+    /* Dark primary icon container */
+    @apply theme-icon-container bg-brand-900 text-brand-400 group-hover:bg-brand-800;
+  }
+
+  .theme-icon-container-success {
+    /* Dark success icon container */
+    @apply theme-icon-container bg-success-900 text-success-400 group-hover:bg-success-800;
+  }
+
+  .theme-icon-container-danger {
+    /* Dark danger icon container */
+    @apply theme-icon-container bg-danger-900 text-danger-400 group-hover:bg-danger-800;
+  }
+
+  .theme-icon-container-neutral {
+    /* Dark neutral icon container */
+    @apply theme-icon-container bg-neutral-800 text-neutral-400 group-hover:bg-neutral-700;
+  }
+
+  /* Dropdown Components - Dark Theme */
+  .theme-dropdown {
+    /* Dark dropdown */
+    @apply absolute right-0 mt-3 w-64 bg-neutral-800 rounded-xl shadow-large border border-neutral-700 py-2 animate-scale-in z-50;
+  }
+
+  .theme-dropdown-item {
+    /* Dark dropdown items */
+    @apply w-full flex items-center px-4 py-3 text-sm text-neutral-300 hover:bg-neutral-700 hover:text-neutral-100
+           transition-colors duration-200;
+  }
+
+  .theme-dropdown-divider {
+    /* Dark dropdown divider */
+    @apply border-t border-neutral-700 my-2;
+  }
+
+  /* Mobile Menu - Dark Theme */
+  .theme-mobile-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden;
+  }
+
+  .theme-mobile-menu {
+    /* Dark mobile menu */
+    @apply fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-neutral-800 shadow-2xl z-50 lg:hidden;
+  }
+
+  /* Status Indicators */
+  .theme-status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .theme-status-online {
+    @apply theme-status-dot bg-success-500;
+  }
+
+  .theme-status-offline {
+    @apply theme-status-dot bg-neutral-500;
+  }
+
+  .theme-status-busy {
+    @apply theme-status-dot bg-danger-500;
+  }
+
+  .theme-status-away {
+    @apply theme-status-dot bg-warning-500;
+  }
+}
+
+@layer utilities {
+  /* Custom Utilities */
+  .theme-scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .theme-scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .theme-text-balance {
+    text-wrap: balance;
+  }
+
+  /* Animation Utilities */
+  .theme-animate-in {
+    @apply animate-fade-in;
+  }
+
+  .theme-animate-out {
+    @apply animate-fade-out;
+  }
+
+  /* Hover Utilities */
+  .theme-hover-lift {
+    @apply transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .theme-hover-glow {
+    @apply transition-shadow duration-300 hover:shadow-glow-brand;
+  }
+
+  /* Scroll to Top Button */
+  .theme-scroll-to-top {
+    @apply fixed bottom-8 right-8 z-50 w-12 h-12 theme-bg-gradient rounded-full 
+           flex items-center justify-center text-white shadow-large 
+           hover:shadow-glow-brand transition-all duration-300 
+           hover:scale-110 active:scale-95 animate-fade-in;
+  }
+
+  @media (max-width: 768px) {
+    .theme-scroll-to-top {
+      @apply bottom-6 right-6 w-10 h-10;
+    }
+
+    .theme-scroll-to-top .lucide {
+      @apply w-5 h-5;
+    }
+  }
+}
+
+/* Custom Audio Slider Styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(
+    to right,
+    #059669 0%,
+    #059669 0%,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Webkit browsers */
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #059669;
+  border: 2px solid #059669; /* same color as thumb */
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+  position: relative;
+  z-index: 3;
+}
+
+/* Mozilla Firefox */
+.slider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.5);
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider::-moz-range-progress {
+  background-color: #059669; /* green for progress */
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider::-moz-range-thumb {
+  background: #059669;
+  border: 2px solid #059669;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+/* Custom Audio Slider Styles - Dark Theme */
+.slider-dark {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider-dark::-webkit-slider-track {
+  /* Dark slider track */
+  background: rgba(115, 115, 115, 0.3);
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider-dark::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  /* Brand color slider thumb */
+  background: #059669;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.slider-dark::-moz-range-track {
+  /* Dark slider track for Firefox */
+  background: rgba(115, 115, 115, 0.3);
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+}
+
+.slider-dark::-moz-range-thumb {
+  /* Brand color slider thumb for Firefox */
+  background: #059669;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}

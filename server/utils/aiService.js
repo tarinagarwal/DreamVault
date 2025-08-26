@@ -1,5 +1,14 @@
+import { initializeSunoKeyManager } from "./apiKeyManager.js";
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const SUNO_API_KEY = process.env.SUNO_API_KEY;
+
+// Initialize Suno API key manager
+let sunoKeyManager;
+try {
+  sunoKeyManager = initializeSunoKeyManager();
+} catch (error) {
+  console.warn("⚠️ Suno API key manager initialization failed:", error.message);
+}
 
 // Generate story using Groq AI
 export const generateStory = async (title, description) => {
@@ -69,11 +78,11 @@ Story:`;
   }
 };
 
-// Generate music using Suno API
+// Generate music using Suno API with fallback
 export const generateMusic = async (title, description) => {
   try {
-    if (!SUNO_API_KEY) {
-      console.log("🎵 No Suno API key found, simulating music generation...");
+    if (!sunoKeyManager) {
+      console.log("🎵 No Suno API keys found, simulating music generation...");
 
       // Simulate processing time
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -114,77 +123,101 @@ export const generateMusic = async (title, description) => {
 
     console.log(`📞 Callback URL configured: ${callbackUrl}`);
 
-    // Make request to Suno API v1
-    const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SUNO_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    // Use key manager to make request with fallback
+    return await sunoKeyManager.executeWithFallback(async (apiKey) => {
+      const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Suno API error response: ${errorText}`);
-      throw new Error(
-        `Suno API error: ${response.status} ${response.statusText}`
-      );
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Suno API error response: ${errorText}`);
+        const error = new Error(
+          `Suno API error: ${response.status} ${response.statusText}`
+        );
+        error.status = response.status;
+        throw error;
+      }
 
-    const data = await response.json();
-    console.log("Suno API response:", data);
+      const data = await response.json();
+      console.log("Suno API response:", data);
 
-    // Handle the response format from Suno API - check for task-based response first
-    if (data.code === 200 && data.data && data.data.taskId) {
-      console.log(
-        `✅ Music generation task created with ID: ${data.data.taskId}`
-      );
+      // Check for Suno API error responses first
+      if (data.code && data.code !== 200) {
+        const errorMsg = data.msg || `Suno API error code: ${data.code}`;
+        console.error(`Suno API error: ${errorMsg}`);
 
-      // Start polling for completion in the background
-      pollMusicGeneration(data.data.taskId, title, genre);
+        // Create error with appropriate status code for fallback detection
+        const error = new Error(errorMsg);
+        if (
+          data.code === 429 ||
+          errorMsg.toLowerCase().includes("insufficient credits")
+        ) {
+          error.status = 429; // Quota exceeded
+        } else if (data.code === 401 || data.code === 403) {
+          error.status = data.code; // Auth errors
+        } else {
+          error.status = data.code;
+        }
+        throw error;
+      }
+
+      // Handle successful response format - check for task-based response first
+      if (data.code === 200 && data.data && data.data.taskId) {
+        console.log(
+          `✅ Music generation task created with ID: ${data.data.taskId}`
+        );
+
+        // Start polling for completion in the background
+        pollMusicGeneration(data.data.taskId, title, genre);
+
+        return {
+          description: `${genre} theme song for: ${title}`,
+          audioUrl: null, // Will be updated when generation completes
+          duration: 30, // Default duration
+          genre,
+          taskId: data.data.taskId, // Store task ID for later retrieval
+        };
+      }
+
+      // Handle different response formats for direct track responses
+      let tracks = [];
+      if (Array.isArray(data)) {
+        tracks = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        tracks = data.data;
+      } else if (data.tracks && Array.isArray(data.tracks)) {
+        tracks = data.tracks;
+      } else if (data.id) {
+        // Single track response
+        tracks = [data];
+      } else {
+        console.error("Unexpected Suno API response format:", data);
+        throw new Error("Invalid response format from Suno API");
+      }
+
+      if (tracks.length === 0) {
+        throw new Error("No tracks returned from Suno API");
+      }
+
+      // Handle direct track response (if any)
+      const track = tracks[0];
+
+      console.log(`✅ Music generated successfully with Suno API`);
 
       return {
-        description: `${genre} theme song for: ${title}`,
-        audioUrl: null, // Will be updated when generation completes
-        duration: 30, // Default duration
+        description: `${genre} theme song: ${track.title || title}`,
+        audioUrl: track.audio_url || track.audioUrl,
+        duration: track.duration || 30, // Default to 30 seconds if not provided
         genre,
-        taskId: data.data.taskId, // Store task ID for later retrieval
+        taskId: track.id,
       };
-    }
-
-    // Handle different response formats for direct track responses
-    let tracks = [];
-    if (Array.isArray(data)) {
-      tracks = data;
-    } else if (data.data && Array.isArray(data.data)) {
-      tracks = data.data;
-    } else if (data.tracks && Array.isArray(data.tracks)) {
-      tracks = data.tracks;
-    } else if (data.id) {
-      // Single track response
-      tracks = [data];
-    } else {
-      console.error("Unexpected Suno API response format:", data);
-      throw new Error("Invalid response format from Suno API");
-    }
-
-    if (tracks.length === 0) {
-      throw new Error("No tracks returned from Suno API");
-    }
-
-    // Handle direct track response (if any)
-    const track = tracks[0];
-
-    console.log(`✅ Music generated successfully with Suno API`);
-
-    return {
-      description: `${genre} theme song: ${track.title || title}`,
-      audioUrl: track.audio_url || track.audioUrl,
-      duration: track.duration || 30, // Default to 30 seconds if not provided
-      genre,
-      taskId: track.id,
-    };
+    });
   } catch (error) {
     console.error("Music generation error:", error);
 
@@ -307,29 +340,51 @@ const markMusicAsFailed = async (taskId) => {
 // Function to check music generation status using taskId
 export const checkMusicGenerationStatus = async (taskId) => {
   try {
-    if (!SUNO_API_KEY) {
+    if (!sunoKeyManager) {
       throw new Error("Suno API key not configured");
     }
 
-    const response = await fetch(
-      `https://api.sunoapi.org/api/v1/generate/record-info?taskId=${taskId}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${SUNO_API_KEY}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Suno API error: ${response.status} ${response.statusText}`
+    return await sunoKeyManager.executeWithFallback(async (apiKey) => {
+      const response = await fetch(
+        `https://api.sunoapi.org/api/v1/generate/record-info?taskId=${taskId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        }
       );
-    }
 
-    const data = await response.json();
-    // console.log(`📊 Status check for task ${taskId}:`, data);
-    return data;
+      if (!response.ok) {
+        const error = new Error(
+          `Suno API error: ${response.status} ${response.statusText}`
+        );
+        error.status = response.status;
+        throw error;
+      }
+
+      const data = await response.json();
+
+      // Check for Suno API error responses
+      if (data.code && data.code !== 200) {
+        const errorMsg = data.msg || `Suno API error code: ${data.code}`;
+        const error = new Error(errorMsg);
+        if (
+          data.code === 429 ||
+          errorMsg.toLowerCase().includes("insufficient credits")
+        ) {
+          error.status = 429;
+        } else if (data.code === 401 || data.code === 403) {
+          error.status = data.code;
+        } else {
+          error.status = data.code;
+        }
+        throw error;
+      }
+
+      // console.log(`📊 Status check for task ${taskId}:`, data);
+      return data;
+    });
   } catch (error) {
     console.error("Error checking music generation status:", error);
     throw error;
@@ -339,7 +394,7 @@ export const checkMusicGenerationStatus = async (taskId) => {
 // Alternative function for custom music generation with more control
 export const generateCustomMusic = async (title, description, options = {}) => {
   try {
-    if (!SUNO_API_KEY) {
+    if (!sunoKeyManager) {
       throw new Error("Suno API key not configured");
     }
 
@@ -364,46 +419,67 @@ export const generateCustomMusic = async (title, description, options = {}) => {
       ...options, // Allow additional options to be passed through
     };
 
-    const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SUNO_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    return await sunoKeyManager.executeWithFallback(async (apiKey) => {
+      const response = await fetch("https://api.sunoapi.org/api/v1/generate", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = new Error(
+          `Suno API error: ${response.status} ${response.statusText}`
+        );
+        error.status = response.status;
+        throw error;
+      }
+
+      const data = await response.json();
+
+      // Check for Suno API error responses
+      if (data.code && data.code !== 200) {
+        const errorMsg = data.msg || `Suno API error code: ${data.code}`;
+        const error = new Error(errorMsg);
+        if (
+          data.code === 429 ||
+          errorMsg.toLowerCase().includes("insufficient credits")
+        ) {
+          error.status = 429;
+        } else if (data.code === 401 || data.code === 403) {
+          error.status = data.code;
+        } else {
+          error.status = data.code;
+        }
+        throw error;
+      }
+
+      // Handle response similar to generateMusic
+      let tracks = [];
+      if (Array.isArray(data)) {
+        tracks = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        tracks = data.data;
+      } else if (data.id) {
+        tracks = [data];
+      }
+
+      if (tracks.length === 0) {
+        throw new Error("No tracks returned from Suno API");
+      }
+
+      const track = tracks[0];
+
+      return {
+        description: `${genre} theme song: ${track.title || title}`,
+        audioUrl: track.audio_url || track.audioUrl,
+        duration: track.duration || 30,
+        genre,
+        generationId: track.id,
+      };
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `Suno API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-
-    // Handle response similar to generateMusic
-    let tracks = [];
-    if (Array.isArray(data)) {
-      tracks = data;
-    } else if (data.data && Array.isArray(data.data)) {
-      tracks = data.data;
-    } else if (data.id) {
-      tracks = [data];
-    }
-
-    if (tracks.length === 0) {
-      throw new Error("No tracks returned from Suno API");
-    }
-
-    const track = tracks[0];
-
-    return {
-      description: `${genre} theme song: ${track.title || title}`,
-      audioUrl: track.audio_url || track.audioUrl,
-      duration: track.duration || 30,
-      genre,
-      generationId: track.id,
-    };
   } catch (error) {
     console.error("Custom music generation error:", error);
     throw error;
@@ -413,24 +489,47 @@ export const generateCustomMusic = async (title, description, options = {}) => {
 // Function to get account information and credits
 export const getSunoAccountInfo = async () => {
   try {
-    if (!SUNO_API_KEY) {
+    if (!sunoKeyManager) {
       throw new Error("Suno API key not configured");
     }
 
-    const response = await fetch("https://api.sunoapi.org/api/v1/account", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${SUNO_API_KEY}`,
-      },
+    return await sunoKeyManager.executeWithFallback(async (apiKey) => {
+      const response = await fetch("https://api.sunoapi.org/api/v1/account", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = new Error(
+          `Suno API error: ${response.status} ${response.statusText}`
+        );
+        error.status = response.status;
+        throw error;
+      }
+
+      const data = await response.json();
+
+      // Check for Suno API error responses
+      if (data.code && data.code !== 200) {
+        const errorMsg = data.msg || `Suno API error code: ${data.code}`;
+        const error = new Error(errorMsg);
+        if (
+          data.code === 429 ||
+          errorMsg.toLowerCase().includes("insufficient credits")
+        ) {
+          error.status = 429;
+        } else if (data.code === 401 || data.code === 403) {
+          error.status = data.code;
+        } else {
+          error.status = data.code;
+        }
+        throw error;
+      }
+
+      return data;
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `Suno API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return await response.json();
   } catch (error) {
     console.error("Error getting Suno account info:", error);
     throw error;
